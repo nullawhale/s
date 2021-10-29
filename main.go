@@ -19,19 +19,21 @@ const (
 	DOWN  Direction = 3
 )
 
-const ScreenWidth = 200
-const ScreenHeight = 200
+const ScreenWidth = 800
+const ScreenHeight = 600
 const ObjectSize = 10
+const ObjectSpeed = 3
+const RotationSpeed = 2
 
 var window *sdl.Window
 var renderer *sdl.Renderer
-var snake Snake
+var player Player
 var apple Apple
 var direction Direction
 
 func run() <-chan error {
 	//tick := time.Tick(65 * time.Millisecond)
-	ticker := time.NewTicker(time.Second / 30)
+	ticker := time.NewTicker(time.Second / 60)
 	errors := make(chan error)
 	running := true
 
@@ -44,21 +46,13 @@ func run() <-chan error {
 			case *sdl.KeyboardEvent:
 				switch e.Keysym.Sym {
 				case sdl.K_LEFT:
-					if direction != RIGHT {
-						direction = LEFT
-					}
+					direction = LEFT
 				case sdl.K_RIGHT:
-					if direction != LEFT {
-						direction = RIGHT
-					}
+					direction = RIGHT
 				case sdl.K_UP:
-					if direction != DOWN {
-						direction = UP
-					}
+					direction = UP
 				case sdl.K_DOWN:
-					if direction != UP {
-						direction = DOWN
-					}
+					direction = DOWN
 				}
 			}
 		}
@@ -68,14 +62,14 @@ func run() <-chan error {
 		if err := clearScreen(renderer); err != nil {
 			errors <- err
 		}
-		snake.update(direction)
-		if err := snake.draw(renderer); err != nil {
+		player.update(direction)
+		if err := player.draw(renderer); err != nil {
 			errors <- err
 		}
 		if err := apple.draw(renderer); err != nil {
 			errors <- err
 		}
-		if snake.eat(apple) {
+		if player.eat(apple) {
 			apple = Apple{
 				rand.Int31n(ScreenWidth/ObjectSize) * ObjectSize,
 				rand.Int31n(ScreenHeight/ObjectSize) * ObjectSize, ObjectSize,
@@ -85,7 +79,7 @@ func run() <-chan error {
 			}
 		}
 
-		if snake.dead() {
+		if player.dead() {
 			running = false
 		}
 		renderer.Present()
@@ -138,11 +132,11 @@ func main() {
 		fmt.Printf("Error: %s\n", err)
 	}
 
-	snake = Snake{
-		ObjectSize, ObjectSize,
+	player = Player{
+		ObjectSize * 3, ObjectSize * 3,
 		0, 0,
 		ObjectSize,
-		[]Part{{0, 0}},
+		1,
 	}
 	apple = Apple{
 		rand.Int31n(ScreenWidth/ObjectSize) * ObjectSize,
@@ -152,6 +146,6 @@ func main() {
 	direction = IDLE
 
 	if err = runWorld(); err != nil {
-		_, _ = fmt.Printf("Error: %s\n", err)
+		fmt.Printf("Error: %s\n", err)
 	}
 }
