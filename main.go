@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"runtime"
 	"time"
+	//"time"
 )
 
 type Direction int32
@@ -28,16 +29,14 @@ var snake Snake
 var apple Apple
 var direction Direction
 
-func run(events <-chan sdl.Event) <-chan error {
-	tick := time.Tick(65 * time.Millisecond)
-	//ticks := sdl.GetTicks()
-	//done := make(chan bool)
+func run() <-chan error {
+	//tick := time.Tick(65 * time.Millisecond)
+	ticker := time.NewTicker(time.Second / 30)
 	errors := make(chan error)
 	running := true
 
 	for running {
-		select {
-		case event := <-events:
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch e := event.(type) {
 			case *sdl.QuitEvent:
 				fmt.Print("123")
@@ -62,60 +61,34 @@ func run(events <-chan sdl.Event) <-chan error {
 					}
 				}
 			}
-		case <-tick:
-			if err := clearScreen(renderer); err != nil {
-				errors <- err
-			}
+		}
 
-			/*for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-				switch e := event.(type) {
-				case *sdl.QuitEvent:
-					fmt.Print("123")
-					running = false
-				case *sdl.KeyboardEvent:
-					switch e.Keysym.Sym {
-					case sdl.K_LEFT:
-						if direction != RIGHT {
-							direction = LEFT
-						}
-					case sdl.K_RIGHT:
-						if direction != LEFT {
-							direction = RIGHT
-						}
-					case sdl.K_UP:
-						if direction != DOWN {
-							direction = UP
-						}
-					case sdl.K_DOWN:
-						if direction != UP {
-							direction = DOWN
-						}
-					}
-				}
-			}*/
+		<-ticker.C
 
-			snake.update(direction)
-			if err := snake.draw(renderer); err != nil {
-				errors <- err
+		if err := clearScreen(renderer); err != nil {
+			errors <- err
+		}
+		snake.update(direction)
+		if err := snake.draw(renderer); err != nil {
+			errors <- err
+		}
+		if err := apple.draw(renderer); err != nil {
+			errors <- err
+		}
+		if snake.eat(apple) {
+			apple = Apple{
+				rand.Int31n(ScreenWidth/ObjectSize) * ObjectSize,
+				rand.Int31n(ScreenHeight/ObjectSize) * ObjectSize, ObjectSize,
 			}
 			if err := apple.draw(renderer); err != nil {
 				errors <- err
 			}
-			if snake.eat(apple) {
-				apple = Apple{
-					rand.Int31n(ScreenWidth/ObjectSize) * ObjectSize,
-					rand.Int31n(ScreenHeight/ObjectSize) * ObjectSize, ObjectSize,
-				}
-				if err := apple.draw(renderer); err != nil {
-					errors <- err
-				}
-			}
-
-			if snake.dead() {
-				running = false
-			}
-			renderer.Present()
 		}
+
+		if snake.dead() {
+			running = false
+		}
+		renderer.Present()
 	}
 
 	return errors
@@ -133,17 +106,15 @@ func clearScreen(renderer *sdl.Renderer) (err error) {
 }
 
 func runWorld() (errors error) {
-	events := make(chan sdl.Event)
-	errorC := run(events)
+	//events := make(chan sdl.Event)
+	errorC := run()
 
 	runtime.LockOSThread()
-	for {
-		select {
-		case events <- sdl.WaitEvent():
-		case err := <-errorC:
-			return err
-		}
+	if errorC != nil {
+		return errors
 	}
+
+	return nil
 }
 
 func main() {
