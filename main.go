@@ -71,8 +71,8 @@ func run() <-chan error {
 		}
 		if player.eat(apple) {
 			apple = Apple{
-				rand.Int31n(ScreenWidth/ObjectSize) * ObjectSize,
-				rand.Int31n(ScreenHeight/ObjectSize) * ObjectSize, ObjectSize,
+				float32(rand.Int31n(ScreenWidth/ObjectSize) * ObjectSize),
+				float32(rand.Int31n(ScreenHeight/ObjectSize) * ObjectSize), ObjectSize,
 			}
 			if err := apple.draw(renderer); err != nil {
 				errors <- err
@@ -120,7 +120,7 @@ func main() {
 	defer sdl.Quit()
 
 	window, err = sdl.CreateWindow(
-		"Input", 150, 400,
+		"Input", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		ScreenWidth, ScreenHeight, sdl.WINDOW_SHOWN)
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
@@ -133,14 +133,14 @@ func main() {
 	}
 
 	player = Player{
-		ObjectSize * 3, ObjectSize * 3,
+		Part{ObjectSize * 3, ObjectSize * 3},
 		0, 0,
 		ObjectSize,
 		1,
 	}
 	apple = Apple{
-		rand.Int31n(ScreenWidth/ObjectSize) * ObjectSize,
-		rand.Int31n(ScreenHeight/ObjectSize) * ObjectSize,
+		float32(rand.Int31n(ScreenWidth/ObjectSize) * ObjectSize),
+		float32(rand.Int31n(ScreenHeight/ObjectSize) * ObjectSize),
 		ObjectSize,
 	}
 	direction = IDLE
