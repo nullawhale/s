@@ -1,116 +1,103 @@
 package main
 
 import (
-	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
 	"math"
 )
 
-type Part struct {
-	x, y float32
-}
-
 type Player struct {
-	p      Part
+	center sdl.FPoint
 	dx, dy float32
 	size   float32
 	angle  float32
+	a      float32
 }
 
 func (s *Player) draw(renderer *sdl.Renderer) (err error) {
-	//for i := 0; i < len(s.body); i++ {}
 
 	if err = renderer.SetDrawColor(255, 255, 255, 255); err != nil {
 		return err
 	}
 
-	x, y := rotate(s.p, Part{s.p.x, s.p.y - s.size}, s.angle)
-	//x2, y2 := rotate(s.p, Part{s.p.x - s.size, s.p.y}, s.angle)
-	//x2, y2 := rotate(s.p, Part{s.p.x - s.size, s.p.y + s.size}, s.angle)
-	//x3, y3 := rotate(s.p, Part{s.p.x + s.size, s.p.y + s.size}, s.angle)
-
 	renderer.DrawLinesF([]sdl.FPoint{
-		{x, y},
-		{s.p.x, s.p.y},
-		//{x2, y2},
-		//{x3, y3},
-		//{x, y},
+		rotate(s.center, sdl.FPoint{X: s.center.X - s.size, Y: s.center.Y - s.size}, s.angle),
+		rotate(s.center, sdl.FPoint{X: s.center.X + s.size, Y: s.center.Y - s.size}, s.angle),
+		rotate(s.center, sdl.FPoint{X: s.center.X, Y: s.center.Y + s.size*2}, s.angle),
+		rotate(s.center, sdl.FPoint{X: s.center.X - s.size, Y: s.center.Y - s.size}, s.angle),
 	})
 
-	if err = renderer.SetDrawColor(255, 0, 0, 255); err != nil {
-		return err
-	}
-
-	renderer.DrawLinesF([]sdl.FPoint{
-		{s.p.x, s.p.y},
-		{s.p.x, s.p.y},
-	})
+	//if err = renderer.SetDrawColor(255, 0, 0, 255); err != nil {
+	//	return err
+	//}
+	//
+	//renderer.DrawPointF(s.center.X, s.center.Y)
 
 	return
 }
 
-func rotate(orig Part, p Part, a float32) (float32, float32) {
-	sin := math.Sin(rad(float64(a)))
-	cos := math.Cos(rad(float64(a)))
+func rotate(orig sdl.FPoint, p sdl.FPoint, a float32) sdl.FPoint {
+	sin := float32(math.Sin(rad(a)))
+	cos := float32(math.Cos(rad(a)))
 
-	newX := orig.x + float32(cos)*(p.x-orig.x) - float32(sin)*(p.y-orig.y)
-	newY := orig.y + float32(sin)*(p.x-orig.x) - float32(cos)*(p.y-orig.y)
+	newX := cos*(p.X-orig.X) - sin*(p.Y-orig.Y) + orig.X
+	newY := sin*(p.X-orig.X) + cos*(p.Y-orig.Y) + orig.Y
 
-	return newX, newY
+	return sdl.FPoint{X: newX, Y: newY}
 }
 
 func (s *Player) eat(a Apple) bool {
-	if s.p.x == a.x && s.p.y == a.y {
-		//s.body = append(s.body, Part{a.x+1, a.y+1})
-		return true
-	}
+	//if s.center.X == a.X && s.center.Y == a.Y {
+	//	s.body = append(s.body, Part{a.X+1, a.Y+1})
+	//	return true
+	//}
 	return false
 }
 
 func (s *Player) dead() bool {
-	//if s.body.x == s.body.x && s.body.y == s.body.y {
+	//if s.body.X == s.body.X && s.body.Y == s.body.Y {
 	//	return true
 	//}
 	return false
 }
 
 func (s *Player) update(d Direction) {
-	s.p.x += s.dx
-	s.p.y += s.dy
+	s.center.X += s.dx
+	s.center.Y += s.dy
 
-	if s.p.x >= ScreenWidth {
-		s.p.x = 0
+	if s.center.X >= ScreenWidth {
+		s.center.X = 0
 	}
-	if s.p.x <= -ObjectSize {
-		s.p.x = ScreenWidth
+	if s.center.X <= -ObjectSize {
+		s.center.X = ScreenWidth
 	}
-	if s.p.y >= ScreenHeight {
-		s.p.y = 0
+	if s.center.Y >= ScreenHeight {
+		s.center.Y = 0
 	}
-	if s.p.y <= -ObjectSize {
-		s.p.y = ScreenHeight
+	if s.center.Y <= -ObjectSize {
+		s.center.Y = ScreenHeight
 	}
 
 	switch d {
 	case LEFT:
-		s.angle += RotationSpeed
-		//fmt.Printf("%f ", s.angle)
+		s.angle -= RotationSpeed
 		break
 	case RIGHT:
-		s.angle -= RotationSpeed
-		//fmt.Printf("%f ", s.angle)
+		s.angle += RotationSpeed
 		break
 	case UP:
-		//angleTmp := s.angle
-
-		s.dx = float32(math.Sin(rad(float64(s.angle))))
-		s.dy = float32(math.Cos(rad(float64(s.angle))))
-
-		fmt.Printf("%f ", s.dx)
+		if s.a < 1 {
+			s.a += 0.05
+		}
+		s.dx = -s.a * float32(math.Sin(rad(s.angle)))
+		s.dy = s.a * float32(math.Cos(rad(s.angle)))
 	case DOWN:
-		s.dy = 0
-		s.dx = 0
+		if s.a > 0 {
+			s.a -= 0.05
+		}
+		s.dx = -s.a * float32(math.Sin(rad(s.angle)))
+		s.dy = s.a * float32(math.Cos(rad(s.angle)))
 	case IDLE:
+		s.a = 0
 		s.dx = 0
 		s.dy = 0
 	}
@@ -120,6 +107,6 @@ func (s *Player) update(d Direction) {
 	}
 }
 
-func rad(degree float64) float64 {
-	return degree * math.Pi / 180
+func rad(degree float32) float64 {
+	return float64(degree) * math.Pi / 180
 }

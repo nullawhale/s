@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
+	"math"
 	"math/rand"
 	"runtime"
 	"time"
@@ -19,15 +20,17 @@ const (
 	DOWN  Direction = 3
 )
 
-const ScreenWidth = 800
-const ScreenHeight = 600
+const ScreenWidth = 300
+const ScreenHeight = 300
 const ObjectSize = 10
 const ObjectSpeed = 3
+const BulletSpeed = 2
 const RotationSpeed = 2
 
 var window *sdl.Window
 var renderer *sdl.Renderer
 var player Player
+var bullets []Bullet
 var apple Apple
 var direction Direction
 
@@ -53,6 +56,14 @@ func run() <-chan error {
 					direction = UP
 				case sdl.K_DOWN:
 					direction = DOWN
+				case sdl.K_SPACE:
+					bullets = append(bullets, Bullet{
+						player.center,
+						float32(-BulletSpeed * math.Sin(rad(player.angle))),
+						float32(BulletSpeed * math.Sin(rad(player.angle))),
+						player.angle,
+						true,
+					})
 				}
 			}
 		}
@@ -66,9 +77,15 @@ func run() <-chan error {
 		if err := player.draw(renderer); err != nil {
 			errors <- err
 		}
+
+		for _, bullet := range bullets {
+			bullet.update()
+		}
+
 		if err := apple.draw(renderer); err != nil {
 			errors <- err
 		}
+
 		if player.eat(apple) {
 			apple = Apple{
 				float32(rand.Int31n(ScreenWidth/ObjectSize) * ObjectSize),
@@ -120,7 +137,7 @@ func main() {
 	defer sdl.Quit()
 
 	window, err = sdl.CreateWindow(
-		"Input", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
+		"Input", 100, 500,
 		ScreenWidth, ScreenHeight, sdl.WINDOW_SHOWN)
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
@@ -133,16 +150,28 @@ func main() {
 	}
 
 	player = Player{
-		Part{ObjectSize * 3, ObjectSize * 3},
+		sdl.FPoint{X: ObjectSize * 3, Y: ObjectSize * 3},
 		0, 0,
 		ObjectSize,
-		1,
+		0,
+		0,
 	}
-	apple = Apple{
+
+	bullets = []Bullet{
+		{
+			player.center,
+			float32(-BulletSpeed * math.Sin(rad(player.angle))),
+			float32(BulletSpeed * math.Sin(rad(player.angle))),
+			player.angle,
+			true,
+		},
+	}
+
+	/*apple = Apple{
 		float32(rand.Int31n(ScreenWidth/ObjectSize) * ObjectSize),
 		float32(rand.Int31n(ScreenHeight/ObjectSize) * ObjectSize),
 		ObjectSize,
-	}
+	}*/
 	direction = IDLE
 
 	if err = runWorld(); err != nil {
