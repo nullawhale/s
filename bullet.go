@@ -8,7 +8,7 @@ import (
 type Bullet struct {
 	pos    sdl.FPoint
 	dx, dy float32
-	angle  float32
+	angle  float64
 	active bool
 }
 
@@ -27,8 +27,8 @@ func (b *Bullet) update() {
 		b.pos.X += b.dx
 		b.pos.Y += b.dy
 
-		b.dx = -BulletSpeed * float32(math.Sin(rad(b.angle)))
-		b.dy = BulletSpeed * float32(math.Cos(rad(b.angle)))
+		b.dx = -BulletSpeed * float32(math.Sin(b.angle))
+		b.dy = BulletSpeed * float32(math.Cos(b.angle))
 	}
 
 	if b.active && (b.pos.X >= ScreenWidth || b.pos.X <= 0 || b.pos.Y >= ScreenHeight || b.pos.Y <= 0) {

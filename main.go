@@ -24,7 +24,7 @@ const ScreenHeight = 300
 const ObjectSize = 10
 const ObjectSpeed = 3
 const BulletSpeed = 2
-const RotationSpeed = 2
+const RotationSpeed = 0.05
 
 var window *sdl.Window
 var renderer *sdl.Renderer
@@ -35,7 +35,6 @@ var apple Apple
 var direction Direction
 
 func run() <-chan error {
-	//tick := time.Tick(65 * time.Millisecond)
 	ticker := time.NewTicker(time.Second / 60)
 	errors := make(chan error)
 	running := true
