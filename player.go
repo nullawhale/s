@@ -5,91 +5,108 @@ import (
 	"math"
 )
 
-type Part struct {
-	x, y int32
-}
-
 type Player struct {
-	x, y   int32
-	dx, dy int32
-	size   int32
-	angle  int32
+	center sdl.FPoint
+	dx, dy float32
+	size   float32
+	angle  float32
+	a      float32
 }
 
 func (s *Player) draw(renderer *sdl.Renderer) (err error) {
-	//for i := 0; i < len(s.body); i++ {}
-	if err = renderer.SetDrawColor(255, 0, 0, 255); err != nil {
-		return err
-	}
-
-	renderer.DrawLines([]sdl.Point{
-		{s.x + 1, s.y},
-		{s.x - 1, s.y - 1},
-		{s.x + 1, s.y + 1},
-		{s.x + 1, s.y},
-	})
 
 	if err = renderer.SetDrawColor(255, 255, 255, 255); err != nil {
 		return err
 	}
 
-	renderer.DrawLines([]sdl.Point{
-		{s.x, s.y - s.size},
-		{s.x - s.size, s.y + s.size},
-		{s.x + s.size, s.y + s.size},
-		{s.x, s.y - s.size},
+	renderer.DrawLinesF([]sdl.FPoint{
+		rotate(s.center, sdl.FPoint{X: s.center.X - s.size, Y: s.center.Y - s.size}, s.angle),
+		rotate(s.center, sdl.FPoint{X: s.center.X + s.size, Y: s.center.Y - s.size}, s.angle),
+		rotate(s.center, sdl.FPoint{X: s.center.X, Y: s.center.Y + s.size*2}, s.angle),
+		rotate(s.center, sdl.FPoint{X: s.center.X - s.size, Y: s.center.Y - s.size}, s.angle),
 	})
+
+	//if err = renderer.SetDrawColor(255, 0, 0, 255); err != nil {
+	//	return err
+	//}
+	//
+	//renderer.DrawPointF(s.center.X, s.center.Y)
 
 	return
 }
 
+func rotate(orig sdl.FPoint, p sdl.FPoint, a float32) sdl.FPoint {
+	sin := float32(math.Sin(rad(a)))
+	cos := float32(math.Cos(rad(a)))
+
+	newX := cos*(p.X-orig.X) - sin*(p.Y-orig.Y) + orig.X
+	newY := sin*(p.X-orig.X) + cos*(p.Y-orig.Y) + orig.Y
+
+	return sdl.FPoint{X: newX, Y: newY}
+}
+
 func (s *Player) eat(a Apple) bool {
-	if s.x == a.x && s.y == a.y {
-		//s.body = append(s.body, Part{a.x+1, a.y+1})
-		return true
-	}
+	//if s.center.X == a.X && s.center.Y == a.Y {
+	//	s.body = append(s.body, Part{a.X+1, a.Y+1})
+	//	return true
+	//}
 	return false
 }
 
 func (s *Player) dead() bool {
-	//if s.body.x == s.body.x && s.body.y == s.body.y {
+	//if s.body.X == s.body.X && s.body.Y == s.body.Y {
 	//	return true
 	//}
 	return false
 }
 
 func (s *Player) update(d Direction) {
-	s.x += s.dx
-	s.y += s.dy
+	s.center.X += s.dx
+	s.center.Y += s.dy
 
-	if s.x >= ScreenWidth {
-		s.x = 0
+	if s.center.X >= ScreenWidth {
+		s.center.X = 0
 	}
-	if s.x <= -ObjectSize {
-		s.x = ScreenWidth
+	if s.center.X <= -ObjectSize {
+		s.center.X = ScreenWidth
 	}
-	if s.y >= ScreenHeight {
-		s.y = 0
+	if s.center.Y >= ScreenHeight {
+		s.center.Y = 0
 	}
-	if s.y <= -ObjectSize {
-		s.y = ScreenHeight
+	if s.center.Y <= -ObjectSize {
+		s.center.Y = ScreenHeight
 	}
 
 	switch d {
 	case LEFT:
-		s.angle = -RotationSpeed
+		s.angle -= RotationSpeed
+		break
 	case RIGHT:
-		s.angle = RotationSpeed
+		s.angle += RotationSpeed
+		break
 	case UP:
-		//angleTmp := s.angle
-
-		s.dx = -int32(math.Sin(float64(s.angle) * math.Pi / 180))
-		s.dy = int32(math.Cos(float64(s.angle) * math.Pi / 180))
+		if s.a < 1 {
+			s.a += 0.05
+		}
+		s.dx = -s.a * float32(math.Sin(rad(s.angle)))
+		s.dy = s.a * float32(math.Cos(rad(s.angle)))
 	case DOWN:
-		s.dy = ObjectSpeed
-		s.dx = 0
+		if s.a > 0 {
+			s.a -= 0.05
+		}
+		s.dx = -s.a * float32(math.Sin(rad(s.angle)))
+		s.dy = s.a * float32(math.Cos(rad(s.angle)))
 	case IDLE:
+		s.a = 0
 		s.dx = 0
 		s.dy = 0
 	}
+
+	if s.angle >= 360 || s.angle <= -360 {
+		s.angle = 0
+	}
+}
+
+func rad(degree float32) float64 {
+	return float64(degree) * math.Pi / 180
 }
