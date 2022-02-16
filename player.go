@@ -7,9 +7,9 @@ import (
 
 type Player struct {
 	center sdl.FPoint
+	angle  float32
 	dx, dy float32
 	size   float32
-	angle  float32
 	a      float32
 }
 

@@ -1,0 +1,29 @@
+{
+  "world": {
+    "screen_width": 500,
+    "screen_height": 500
+  },
+  "player": {
+    "coordinates": {
+      "x": 250,
+      "y": 250
+    },
+    "angle": 0
+  },
+  "objects": [
+    {
+      "coordinates": {
+        "x": 100,
+        "y": 100
+      },
+      "radius": 30
+    },
+    {
+      "coordinates": {
+        "x": 400,
+        "y": 400
+      },
+      "radius": 30
+    }
+  ]
+}

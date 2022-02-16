@@ -33,6 +33,7 @@ var player Player
 var bullets []Bullet
 var apple Apple
 var direction Direction
+var worldMap Map
 
 func run() <-chan error {
 	//tick := time.Tick(65 * time.Millisecond)
@@ -136,9 +137,13 @@ func main() {
 	}
 	defer sdl.Quit()
 
+	worldMap.LoadMap()
+
+	fmt.Println(worldMap)
+
 	window, err = sdl.CreateWindow(
 		"Input", 100, 500,
-		ScreenWidth, ScreenHeight, sdl.WINDOW_SHOWN)
+		worldMap.World.ScreenWidth, worldMap.World.ScreenHeight, sdl.WINDOW_SHOWN)
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
 	}
@@ -150,10 +155,10 @@ func main() {
 	}
 
 	player = Player{
-		sdl.FPoint{X: ObjectSize * 3, Y: ObjectSize * 3},
+		sdl.FPoint{X: worldMap.Player.Coordinates.X, Y: worldMap.Player.Coordinates.Y},
+		worldMap.Player.Angle,
 		0, 0,
 		ObjectSize,
-		0,
 		0,
 	}
 
