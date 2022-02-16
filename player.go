@@ -7,9 +7,9 @@ import (
 
 type Player struct {
 	center sdl.FPoint
-	angle  float32
 	dx, dy float32
 	size   float32
+	angle  float64
 	a      float32
 }
 
@@ -35,9 +35,9 @@ func (s *Player) draw(renderer *sdl.Renderer) (err error) {
 	return
 }
 
-func rotate(orig sdl.FPoint, p sdl.FPoint, a float32) sdl.FPoint {
-	sin := float32(math.Sin(rad(a)))
-	cos := float32(math.Cos(rad(a)))
+func rotate(orig sdl.FPoint, p sdl.FPoint, a float64) sdl.FPoint {
+	sin := float32(math.Sin(a))
+	cos := float32(math.Cos(a))
 
 	newX := cos*(p.X-orig.X) - sin*(p.Y-orig.Y) + orig.X
 	newY := sin*(p.X-orig.X) + cos*(p.Y-orig.Y) + orig.Y
@@ -88,25 +88,24 @@ func (s *Player) update(d Direction) {
 		if s.a < 1 {
 			s.a += 0.05
 		}
-		s.dx = -s.a * float32(math.Sin(rad(s.angle)))
-		s.dy = s.a * float32(math.Cos(rad(s.angle)))
+		s.dx = -s.a * float32(math.Sin(s.angle))
+		s.dy = s.a * float32(math.Cos(s.angle))
 	case DOWN:
 		if s.a > 0 {
 			s.a -= 0.05
 		}
-		s.dx = -s.a * float32(math.Sin(rad(s.angle)))
-		s.dy = s.a * float32(math.Cos(rad(s.angle)))
+		s.dx = -s.a * float32(math.Sin(s.angle))
+		s.dy = s.a * float32(math.Cos(s.angle))
 	case IDLE:
 		s.a = 0
 		s.dx = 0
 		s.dy = 0
 	}
 
-	if s.angle >= 360 || s.angle <= -360 {
-		s.angle = 0
+	if s.angle > math.Pi {
+		s.angle -= 2 * math.Pi
 	}
-}
-
-func rad(degree float32) float64 {
-	return float64(degree) * math.Pi / 180
+	if s.angle < -math.Pi {
+		s.angle += 2 * math.Pi
+	}
 }
