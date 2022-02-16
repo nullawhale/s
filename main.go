@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
-	"math"
 	"math/rand"
 	"runtime"
 	"time"
@@ -25,17 +24,17 @@ const ScreenHeight = 300
 const ObjectSize = 10
 const ObjectSpeed = 3
 const BulletSpeed = 2
-const RotationSpeed = 2
+const RotationSpeed = 0.05
 
 var window *sdl.Window
 var renderer *sdl.Renderer
 var player Player
-var bullets []Bullet
+
+var bullets []*Bullet
 var apple Apple
 var direction Direction
 
 func run() <-chan error {
-	//tick := time.Tick(65 * time.Millisecond)
 	ticker := time.NewTicker(time.Second / 60)
 	errors := make(chan error)
 	running := true
@@ -57,12 +56,10 @@ func run() <-chan error {
 				case sdl.K_DOWN:
 					direction = DOWN
 				case sdl.K_SPACE:
-					bullets = append(bullets, Bullet{
-						player.center,
-						float32(-BulletSpeed * math.Sin(rad(player.angle))),
-						float32(BulletSpeed * math.Sin(rad(player.angle))),
-						player.angle,
-						true,
+					bullets = append(bullets, &Bullet{
+						pos:    player.center,
+						angle:  player.angle,
+						active: true,
 					})
 				}
 			}
@@ -78,8 +75,14 @@ func run() <-chan error {
 			errors <- err
 		}
 
-		for _, bullet := range bullets {
+		for i, bullet := range bullets {
 			bullet.update()
+			if err := bullet.draw(renderer); err != nil {
+				errors <- err
+			}
+			if !bullet.active {
+				bullets = rmBullet(bullets, i)
+			}
 		}
 
 		if err := apple.draw(renderer); err != nil {
@@ -138,7 +141,8 @@ func main() {
 
 	window, err = sdl.CreateWindow(
 		"Input", 100, 500,
-		ScreenWidth, ScreenHeight, sdl.WINDOW_SHOWN)
+		ScreenWidth, ScreenHeight, sdl.WINDOW_SHOWN,
+	)
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
 	}
@@ -150,28 +154,15 @@ func main() {
 	}
 
 	player = Player{
-		sdl.FPoint{X: ObjectSize * 3, Y: ObjectSize * 3},
-		0, 0,
-		ObjectSize,
-		0,
-		0,
+		center: sdl.FPoint{X: ObjectSize * 3, Y: ObjectSize * 3},
+		size:   ObjectSize,
 	}
 
-	bullets = []Bullet{
-		{
-			player.center,
-			float32(-BulletSpeed * math.Sin(rad(player.angle))),
-			float32(BulletSpeed * math.Sin(rad(player.angle))),
-			player.angle,
-			true,
-		},
-	}
-
-	/*apple = Apple{
-		float32(rand.Int31n(ScreenWidth/ObjectSize) * ObjectSize),
-		float32(rand.Int31n(ScreenHeight/ObjectSize) * ObjectSize),
-		ObjectSize,
-	}*/
+	//apple = Apple{
+	//	float32(rand.Int31n(ScreenWidth/ObjectSize) * ObjectSize),
+	//	float32(rand.Int31n(ScreenHeight/ObjectSize) * ObjectSize),
+	//	ObjectSize,
+	//}
 	direction = IDLE
 
 	if err = runWorld(); err != nil {
