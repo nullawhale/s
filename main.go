@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
-	"math"
 	"math/rand"
 	"runtime"
 	"time"
@@ -20,13 +19,6 @@ const (
 	DOWN  Direction = 3
 )
 
-const ScreenWidth = 300
-const ScreenHeight = 300
-const ObjectSize = 10
-const ObjectSpeed = 3
-const BulletSpeed = 2
-const RotationSpeed = 0.05
-
 var window *sdl.Window
 var renderer *sdl.Renderer
 var player Player
@@ -34,7 +26,7 @@ var player Player
 var bullets []*Bullet
 var apple Apple
 var direction Direction
-var worldMap Map
+var WorldMap Map
 
 func run() <-chan error {
 	ticker := time.NewTicker(time.Second / 60)
@@ -93,8 +85,9 @@ func run() <-chan error {
 
 		if player.eat(apple) {
 			apple = Apple{
-				float32(rand.Int31n(ScreenWidth/ObjectSize) * ObjectSize),
-				float32(rand.Int31n(ScreenHeight/ObjectSize) * ObjectSize), ObjectSize,
+				float32(rand.Int31n(WorldMap.World.ScreenWidth/WorldMap.Const.ObjectSize) * WorldMap.Const.ObjectSize),
+				float32(rand.Int31n(WorldMap.World.ScreenHeight/WorldMap.Const.ObjectSize) * WorldMap.Const.ObjectSize),
+				float32(WorldMap.Const.ObjectSize),
 			}
 			if err := apple.draw(renderer); err != nil {
 				errors <- err
@@ -141,13 +134,13 @@ func main() {
 	}
 	defer sdl.Quit()
 
-	worldMap.LoadMap()
+	WorldMap.LoadMap()
 
-	fmt.Println(worldMap)
+	fmt.Println(WorldMap)
 
 	window, err = sdl.CreateWindow(
 		"Input", 100, 500,
-		worldMap.World.ScreenWidth, worldMap.World.ScreenHeight, sdl.WINDOW_SHOWN,
+		WorldMap.World.ScreenWidth, WorldMap.World.ScreenHeight, sdl.WINDOW_SHOWN,
 	)
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
@@ -160,14 +153,18 @@ func main() {
 	}
 
 	player = Player{
-		center: sdl.FPoint{X: worldMap.Player.Coordinates.X, Y: worldMap.Player.Coordinates.Y},
-		size:   ObjectSize,
+		center: sdl.FPoint{
+			X: WorldMap.Player.Coordinates.X,
+			Y: WorldMap.Player.Coordinates.Y,
+		},
+		angle: WorldMap.Player.Angle,
+		size:  float32(WorldMap.Const.ObjectSize),
 	}
 
 	/*apple = Apple{
-		float32(rand.Int31n(ScreenWidth/ObjectSize) * ObjectSize),
-		float32(rand.Int31n(ScreenHeight/ObjectSize) * ObjectSize),
-		ObjectSize,
+		float32(rand.Int31n(ScreenWidth/WorldMap.Const.ObjectSize) * WorldMap.Const.ObjectSize),
+		float32(rand.Int31n(ScreenHeight/WorldMap.Const.ObjectSize) * WorldMap.Const.ObjectSize),
+		WorldMap.Const.ObjectSize,
 	}*/
 	direction = IDLE
 

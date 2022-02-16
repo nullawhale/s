@@ -64,25 +64,25 @@ func (s *Player) update(d Direction) {
 	s.center.X += s.dx
 	s.center.Y += s.dy
 
-	if s.center.X >= ScreenWidth {
+	if s.center.X >= float32(WorldMap.World.ScreenWidth) {
 		s.center.X = 0
 	}
-	if s.center.X <= -ObjectSize {
-		s.center.X = ScreenWidth
+	if s.center.X <= -float32(WorldMap.Const.ObjectSize) {
+		s.center.X = float32(WorldMap.World.ScreenWidth)
 	}
-	if s.center.Y >= ScreenHeight {
+	if s.center.Y >= float32(WorldMap.World.ScreenHeight) {
 		s.center.Y = 0
 	}
-	if s.center.Y <= -ObjectSize {
-		s.center.Y = ScreenHeight
+	if s.center.Y <= -float32(WorldMap.Const.ObjectSize) {
+		s.center.Y = float32(WorldMap.World.ScreenHeight)
 	}
 
 	switch d {
 	case LEFT:
-		s.angle -= RotationSpeed
+		s.angle -= WorldMap.Const.RotationSpeed
 		break
 	case RIGHT:
-		s.angle += RotationSpeed
+		s.angle += WorldMap.Const.RotationSpeed
 		break
 	case UP:
 		if s.a < 1 {

@@ -16,8 +16,13 @@ type Map struct {
 			X float32 `json:"x"`
 			Y float32 `json:"y"`
 		} `json:"coordinates"`
-		Angle float32 `json:"angle"`
+		Angle float64 `json:"angle"`
 	} `json:"player"`
+	Const struct {
+		ObjectSize    int32   `json:"object_size"`
+		BulletSpeed   float32 `json:"bullet_speed"`
+		RotationSpeed float64 `json:"rotation_speed"`
+	} `json:"world_constants"`
 	Objects []struct {
 		Coordinates struct {
 			X float32 `json:"x"`
