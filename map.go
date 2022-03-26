@@ -20,16 +20,27 @@ type Map struct {
 	} `json:"player"`
 	Const struct {
 		ObjectSize    int32   `json:"object_size"`
+		ObjectSpeed   float32 `json:"object_speed"`
 		BulletSpeed   float32 `json:"bullet_speed"`
 		RotationSpeed float64 `json:"rotation_speed"`
 	} `json:"world_constants"`
-	Objects []struct {
+	Asteroids []struct {
 		Coordinates struct {
 			X float32 `json:"x"`
 			Y float32 `json:"y"`
 		} `json:"coordinates"`
 		Radius float32 `json:"radius"`
-	} `json:"objects"`
+	} `json:"asteroids"`
+	Walls []struct {
+		Start struct {
+			X float32 `json:"x"`
+			Y float32 `json:"y"`
+		} `json:"start"`
+		End struct {
+			X float32 `json:"x"`
+			Y float32 `json:"y"`
+		} `json:"end"`
+	} `json:"walls"`
 }
 
 func (m *Map) LoadMap() {

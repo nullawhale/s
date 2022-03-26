@@ -23,7 +23,7 @@ func (a *Asteroid) draw(renderer *sdl.Renderer) (err error) {
 	offsety = a.radius
 	d = a.radius - 1
 
-	if err = renderer.SetDrawColor(255, 0, 0, 255); err != nil {
+	if err = renderer.SetDrawColor(255, 255, 255, 255); err != nil {
 		return err
 	}
 
