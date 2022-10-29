@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
-	"math/rand"
+	"math"
 	"runtime"
 	"time"
 	//"time"
@@ -19,20 +19,15 @@ const (
 	DOWN  Direction = 3
 )
 
-const ScreenWidth = 300
-const ScreenHeight = 300
-const ObjectSize = 10
-const ObjectSpeed = 3
-const BulletSpeed = 2
-const RotationSpeed = 0.05
-
 var window *sdl.Window
 var renderer *sdl.Renderer
 var player Player
 
 var bullets []*Bullet
-var apple Apple
+var asteroids []*Asteroid
 var direction Direction
+var WorldMap Map
+var walls []*Wall
 
 func run() <-chan error {
 	ticker := time.NewTicker(time.Second / 60)
@@ -43,7 +38,6 @@ func run() <-chan error {
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch e := event.(type) {
 			case *sdl.QuitEvent:
-				fmt.Print("123")
 				running = false
 			case *sdl.KeyboardEvent:
 				switch e.Keysym.Sym {
@@ -56,6 +50,8 @@ func run() <-chan error {
 				case sdl.K_DOWN:
 					direction = DOWN
 				case sdl.K_SPACE:
+					direction = IDLE
+				case sdl.K_f:
 					bullets = append(bullets, &Bullet{
 						pos:    player.center,
 						angle:  player.angle,
@@ -85,16 +81,14 @@ func run() <-chan error {
 			}
 		}
 
-		if err := apple.draw(renderer); err != nil {
-			errors <- err
+		for _, asteroid := range asteroids {
+			if err := asteroid.draw(renderer); err != nil {
+				errors <- err
+			}
 		}
 
-		if player.eat(apple) {
-			apple = Apple{
-				float32(rand.Int31n(ScreenWidth/ObjectSize) * ObjectSize),
-				float32(rand.Int31n(ScreenHeight/ObjectSize) * ObjectSize), ObjectSize,
-			}
-			if err := apple.draw(renderer); err != nil {
+		for _, wall := range walls {
+			if err := wall.draw(renderer); err != nil {
 				errors <- err
 			}
 		}
@@ -139,9 +133,14 @@ func main() {
 	}
 	defer sdl.Quit()
 
+	WorldMap.LoadMap()
+
+	width := WorldMap.World.ScreenWidth
+	height := WorldMap.World.ScreenHeight
+
 	window, err = sdl.CreateWindow(
 		"Input", 100, 500,
-		ScreenWidth, ScreenHeight, sdl.WINDOW_SHOWN,
+		width, height, sdl.WINDOW_SHOWN,
 	)
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
@@ -154,15 +153,39 @@ func main() {
 	}
 
 	player = Player{
-		center: sdl.FPoint{X: ObjectSize * 3, Y: ObjectSize * 3},
-		size:   ObjectSize,
+		center: sdl.FPoint{
+			X: WorldMap.Player.Coordinates.X,
+			Y: WorldMap.Player.Coordinates.Y,
+		},
+		angle: WorldMap.Player.Angle * math.Pi / 180,
+		size:  float32(WorldMap.Const.ObjectSize),
 	}
 
-	//apple = Apple{
-	//	float32(rand.Int31n(ScreenWidth/ObjectSize) * ObjectSize),
-	//	float32(rand.Int31n(ScreenHeight/ObjectSize) * ObjectSize),
-	//	ObjectSize,
-	//}
+	player.rays = append(player.rays, &Ray{
+		player.center,
+		sdl.FPoint{X: player.center.X, Y: player.center.Y + float32(100)},
+		player.angle,
+	})
+
+	if len(WorldMap.Asteroids) > 0 {
+		for _, asteroid := range WorldMap.Asteroids {
+			asteroids = append(asteroids, &Asteroid{
+				asteroid.Coordinates.X,
+				asteroid.Coordinates.Y,
+				asteroid.Radius,
+			})
+		}
+	}
+
+	if len(WorldMap.Walls) > 0 {
+		for _, wall := range WorldMap.Walls {
+			walls = append(walls, &Wall{
+				start: sdl.FPoint{X: wall.Start.X, Y: wall.Start.Y},
+				end:   sdl.FPoint{X: wall.End.X, Y: wall.End.Y},
+			})
+		}
+	}
+
 	direction = IDLE
 
 	if err = runWorld(); err != nil {

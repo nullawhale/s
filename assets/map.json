@@ -1,0 +1,91 @@
+{
+  "world": {
+    "screen_width": 500,
+    "screen_height": 500
+  },
+  "player": {
+    "coordinates": {
+      "x": 250,
+      "y": 250
+    },
+    "angle": 45
+  },
+  "world_constants": {
+    "object_size": 10,
+    "object_speed": 2,
+    "bullet_speed": 2,
+    "rotation_speed": 0.03
+  },
+  "asteroids": [
+    {
+      "coordinates": {
+        "x": 100,
+        "y": 100
+      },
+      "radius": 30
+    },
+    {
+      "coordinates": {
+        "x": 400,
+        "y": 400
+      },
+      "radius": 30
+    },
+    {
+      "coordinates": {
+        "x": 100,
+        "y": 400
+      },
+      "radius": 30
+    },
+    {
+      "coordinates": {
+        "x": 400,
+        "y": 100
+      },
+      "radius": 30
+    }
+  ],
+  "walls": [
+    {
+      "start": {
+        "x": 5,
+        "y": 5
+      },
+      "end": {
+        "x": 495,
+        "y": 5
+      }
+    },
+    {
+      "start": {
+        "x": 495,
+        "y": 5
+      },
+      "end": {
+        "x": 495,
+        "y": 495
+      }
+    },
+    {
+      "start": {
+        "x": 495,
+        "y": 495
+      },
+      "end": {
+        "x": 5,
+        "y": 495
+      }
+    },
+    {
+      "start": {
+        "x": 5,
+        "y": 495
+      },
+      "end": {
+        "x": 5,
+        "y": 5
+      }
+    }
+  ]
+}
