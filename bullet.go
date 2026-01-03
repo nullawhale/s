@@ -1,37 +1,40 @@
 package main
 
 import (
-	"github.com/veandco/go-sdl2/sdl"
-	"math"
+	"image/color"
+
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 type Bullet struct {
-	pos    sdl.FPoint
-	dx, dy float32
+	pos    Vector
+	vel    Vector
 	angle  float64
 	active bool
+	life   int
 }
 
-func (b *Bullet) draw(renderer *sdl.Renderer) (err error) {
-	if err = renderer.SetDrawColor(255, 0, 0, 255); err != nil {
-		return err
-	}
-
-	renderer.DrawPointF(b.pos.X, b.pos.Y)
-
-	return
+func (b *Bullet) draw(screen *ebiten.Image) {
+	vector.DrawFilledRect(
+		screen,
+		float32(b.pos.X),
+		float32(b.pos.Y),
+		2,
+		2,
+		color.RGBA{R: 255, A: 255},
+		false,
+	)
 }
 
 func (b *Bullet) update() {
 	if b.active {
-		b.pos.X += b.dx
-		b.pos.Y += b.dy
-
-		b.dx = -BulletSpeed * float32(math.Sin(b.angle))
-		b.dy = BulletSpeed * float32(math.Cos(b.angle))
+		b.pos = b.pos.Add(b.vel)
+		b.pos = wrapPosition(b.pos, ScreenWidth, ScreenHeight)
+		b.life--
 	}
 
-	if b.active && (b.pos.X >= ScreenWidth || b.pos.X <= 0 || b.pos.Y >= ScreenHeight || b.pos.Y <= 0) {
+	if b.active && b.life <= 0 {
 		b.active = false
 	}
 }

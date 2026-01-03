@@ -1,111 +1,85 @@
 package main
 
 import (
-	"github.com/veandco/go-sdl2/sdl"
+	"image/color"
 	"math"
+
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 type Player struct {
-	center sdl.FPoint
-	dx, dy float32
-	size   float32
-	angle  float64
-	a      float32
+	pos          Vector
+	vel          Vector
+	angle        float64
+	radius       float64
+	invulnTicks  int
+	fireCooldown int
 }
 
-func (s *Player) draw(renderer *sdl.Renderer) (err error) {
-
-	if err = renderer.SetDrawColor(255, 255, 255, 255); err != nil {
-		return err
+func (p *Player) draw(screen *ebiten.Image) {
+	var lineColor color.Color = color.White
+	if p.invulnTicks > 0 && (p.invulnTicks/6)%2 == 0 {
+		lineColor = color.RGBA{R: 150, G: 150, B: 150, A: 255}
 	}
 
-	renderer.DrawLinesF([]sdl.FPoint{
-		rotate(s.center, sdl.FPoint{X: s.center.X - s.size, Y: s.center.Y - s.size}, s.angle),
-		rotate(s.center, sdl.FPoint{X: s.center.X + s.size, Y: s.center.Y - s.size}, s.angle),
-		rotate(s.center, sdl.FPoint{X: s.center.X, Y: s.center.Y + s.size*2}, s.angle),
-		rotate(s.center, sdl.FPoint{X: s.center.X - s.size, Y: s.center.Y - s.size}, s.angle),
-	})
+	p1 := rotate(p.pos, Vector{X: p.pos.X, Y: p.pos.Y - p.radius}, p.angle)
+	p2 := rotate(p.pos, Vector{X: p.pos.X + p.radius*0.8, Y: p.pos.Y + p.radius}, p.angle)
+	p3 := rotate(p.pos, Vector{X: p.pos.X - p.radius*0.8, Y: p.pos.Y + p.radius}, p.angle)
 
-	//if err = renderer.SetDrawColor(255, 0, 0, 255); err != nil {
-	//	return err
-	//}
-	//
-	//renderer.DrawPointF(s.center.X, s.center.Y)
-
-	return
+	vector.StrokeLine(screen, float32(p1.X), float32(p1.Y), float32(p2.X), float32(p2.Y), 1, lineColor, false)
+	vector.StrokeLine(screen, float32(p2.X), float32(p2.Y), float32(p3.X), float32(p3.Y), 1, lineColor, false)
+	vector.StrokeLine(screen, float32(p3.X), float32(p3.Y), float32(p1.X), float32(p1.Y), 1, lineColor, false)
 }
 
-func rotate(orig sdl.FPoint, p sdl.FPoint, a float64) sdl.FPoint {
-	sin := float32(math.Sin(a))
-	cos := float32(math.Cos(a))
+func (p *Player) update(input PlayerInput) {
+	const maxSpeed = 4.2
+	const accel = 0.12
+	const drag = 0.99
+	const brake = 0.96
+
+	if p.invulnTicks > 0 {
+		p.invulnTicks--
+	}
+	if p.fireCooldown > 0 {
+		p.fireCooldown--
+	}
+
+	if input.Left {
+		p.angle -= RotationSpeed
+	}
+	if input.Right {
+		p.angle += RotationSpeed
+	}
+
+	fwd := Vector{X: math.Sin(p.angle), Y: -math.Cos(p.angle)}
+	if input.Thrust {
+		p.vel = p.vel.Add(fwd.Scale(accel))
+	}
+	if input.Brake {
+		p.vel = p.vel.Add(fwd.Scale(-accel * 0.6))
+	}
+
+	if input.Brake {
+		p.vel = p.vel.Scale(brake)
+	} else {
+		p.vel = p.vel.Scale(drag)
+	}
+
+	if p.vel.Len() > maxSpeed {
+		p.vel = p.vel.Normalize().Scale(maxSpeed)
+	}
+
+	p.pos = p.pos.Add(p.vel)
+	p.pos = wrapPosition(p.pos, ScreenWidth, ScreenHeight)
+}
+
+func rotate(orig Vector, p Vector, a float64) Vector {
+	sin := math.Sin(a)
+	cos := math.Cos(a)
 
 	newX := cos*(p.X-orig.X) - sin*(p.Y-orig.Y) + orig.X
 	newY := sin*(p.X-orig.X) + cos*(p.Y-orig.Y) + orig.Y
 
-	return sdl.FPoint{X: newX, Y: newY}
-}
-
-func (s *Player) eat(a Apple) bool {
-	//if s.center.X == a.X && s.center.Y == a.Y {
-	//	s.body = append(s.body, Part{a.X+1, a.Y+1})
-	//	return true
-	//}
-	return false
-}
-
-func (s *Player) dead() bool {
-	//if s.body.X == s.body.X && s.body.Y == s.body.Y {
-	//	return true
-	//}
-	return false
-}
-
-func (s *Player) update(d Direction) {
-	s.center.X += s.dx
-	s.center.Y += s.dy
-
-	if s.center.X >= ScreenWidth {
-		s.center.X = 0
-	}
-	if s.center.X <= -ObjectSize {
-		s.center.X = ScreenWidth
-	}
-	if s.center.Y >= ScreenHeight {
-		s.center.Y = 0
-	}
-	if s.center.Y <= -ObjectSize {
-		s.center.Y = ScreenHeight
-	}
-
-	switch d {
-	case LEFT:
-		s.angle -= RotationSpeed
-		break
-	case RIGHT:
-		s.angle += RotationSpeed
-		break
-	case UP:
-		if s.a < 1 {
-			s.a += 0.05
-		}
-		s.dx = -s.a * float32(math.Sin(s.angle))
-		s.dy = s.a * float32(math.Cos(s.angle))
-	case DOWN:
-		if s.a > 0 {
-			s.a -= 0.05
-		}
-		s.dx = -s.a * float32(math.Sin(s.angle))
-		s.dy = s.a * float32(math.Cos(s.angle))
-	case IDLE:
-		s.a = 0
-		s.dx = 0
-		s.dy = 0
-	}
-
-	if s.angle > math.Pi {
-		s.angle -= 2 * math.Pi
-	}
-	if s.angle < -math.Pi {
-		s.angle += 2 * math.Pi
-	}
+	return Vector{X: newX, Y: newY}
 }
