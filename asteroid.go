@@ -11,9 +11,10 @@ import (
 var asteroidRadii = []float64{48, 36, 28, 20, 12}
 
 type Asteroid struct {
-	pos  Vector
-	vel  Vector
-	size int
+	pos   Vector
+	vel   Vector
+	size  int
+	shape []Vector
 }
 
 func (a *Asteroid) radius() float64 {
@@ -39,17 +40,47 @@ func (a *Asteroid) update() {
 }
 
 func (a *Asteroid) draw(screen *ebiten.Image) {
-	const segments = 10
 	r := a.radius()
 	lineColor := color.White
 
-	for i := range segments {
-		angle1 := float64(i) * (2 * math.Pi / segments)
-		angle2 := float64(i+1) * (2 * math.Pi / segments)
-		x1 := a.pos.X + math.Cos(angle1)*r
-		y1 := a.pos.Y + math.Sin(angle1)*r
-		x2 := a.pos.X + math.Cos(angle2)*r
-		y2 := a.pos.Y + math.Sin(angle2)*r
+	if len(a.shape) < 3 {
+		return
+	}
+
+	for i := range len(a.shape) {
+		p1 := a.shape[i]
+		p2 := a.shape[(i+1)%len(a.shape)]
+		x1 := a.pos.X + p1.X*r
+		y1 := a.pos.Y + p1.Y*r
+		x2 := a.pos.X + p2.X*r
+		y2 := a.pos.Y + p2.Y*r
 		vector.StrokeLine(screen, float32(x1), float32(y1), float32(x2), float32(y2), 1, lineColor, false)
 	}
+}
+
+func newAsteroid(size int, pos Vector) *Asteroid {
+	return &Asteroid{
+		pos:   pos,
+		vel:   randomAsteroidVel(size),
+		size:  size,
+		shape: generateAsteroidShape(),
+	}
+}
+
+func generateAsteroidShape() []Vector {
+	const pointsMin = 10
+	const pointsMax = 16
+	count := pointsMin + rng.Intn(pointsMax-pointsMin+1)
+	points := make([]Vector, 0, count)
+
+	for i := 0; i < count; i++ {
+		angle := float64(i) * (2 * math.Pi / float64(count))
+		jitter := 0.65 + rng.Float64()*0.4
+		points = append(points, Vector{
+			X: math.Cos(angle) * jitter,
+			Y: math.Sin(angle) * jitter,
+		})
+	}
+
+	return points
 }

@@ -228,11 +228,7 @@ func (g *Game) spawnAsteroids(avoid Vector) []*Asteroid {
 
 	for range count {
 		pos := Vector{X: rng.Float64() * ScreenWidth, Y: rng.Float64() * ScreenHeight}
-		asteroids = append(asteroids, &Asteroid{
-			pos:  pos,
-			vel:  randomAsteroidVel(0),
-			size: 0,
-		})
+		asteroids = append(asteroids, newAsteroid(0, pos))
 	}
 
 	return asteroids
